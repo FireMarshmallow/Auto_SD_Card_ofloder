@@ -5,36 +5,41 @@ import sys
 import time
 from time import sleep
 
-# add paths to SD cards
-
-
+# list of paths to sd cards / drives
 def path_to_drive():
-    list = ['/Volumes/NO NAME/DCIM/',  # SD card from osmo action
-            '/Volumes/Untitled 1/DCIM/100MEDIA/',  # SD card two
-            '/Volumes/EOS_DIGITAL/DCIM/100CANON/', ]  # SD card From canon
+    list = [
+        "/Volumes/NO NAME/",  # SD card from osmo action
+        "/Volumes/Untitled 1/DCIM/100MEDIA/",  # SD card two
+        "/Volumes/EOS_DIGITAL/DCIM/100CANON/",
+    ]  # SD card From canon
     return list
 
+
 # cherk if drives are connected
-
-
 def if_connected():
     for path in path_to_drive():
         if os.path.exists(path) == True:
             offlode_card(path)
 
 
-# oflode to drives
+# move files off sd card
 def offlode_card(sd):
-    move_to = '//Volumes/WinInstall/hellow'
-    shutil.move(sd, move_to)
+    # walk directory
+    move_to = "//Volumes/WinInstall/hellow"
+    for dirName, subdirList, fileList in os.walk(sd, topdown=False):
+        for fname in fileList:
+            pathtofile = dirName + "/" + fname
+            try:
+                shutil.move(pathtofile, move_to)
+            except:
+                pass
 
-
-for _ in range(100):
-    if_connected()
-    sleep(6)
-    print('working')
 
 # infenat loop
+while True:
+    if_connected()
+    sleep(6)
+    print("working")
 
 
 # formeat sd?
