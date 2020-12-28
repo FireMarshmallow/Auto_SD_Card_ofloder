@@ -1403,3 +1403,4 @@ mellow-sorter-env/lib/python3.9/site-packages/typing_extensions-3.7.4.3.dist-inf
 mellow-sorter-env/lib/python3.9/site-packages/typing_extensions-3.7.4.3.dist-info/WHEEL
 .vscode/settings.json
 playgrond.py
+.DS_Store
