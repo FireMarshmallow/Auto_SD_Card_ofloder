@@ -8,6 +8,7 @@ from tkinter import *
 from tkinter import filedialog
 import sys
 import csv
+import pickle
 
 root = Tk()
 root.title("Drive offloder")
@@ -17,12 +18,14 @@ def switchon():
     global switch
     switch = True
     print("scaning Started")
+    changeTextStart()
     start_drive_offlode()
 
 
 def switchoff():
     print("scaning Stoped")
     global switch
+    changeTextstop()
     switch = False
 
 
@@ -32,35 +35,36 @@ def kill():
 
 global listofsdcards
 listofsdcards = []
+global copy_to_path
+copy_to_path = ""
 
 ###SAVE###
-
-
-def make_save_file():
-    PathAndName = os.path.join(sys.path[0], "SD_Cards_save")
-    if os.path.exists(PathAndName) == False:
-        with open(PathAndName, "a") as SD_save_csvfile:
-            writer = csv.DictWriter(SD_save_csvfile, fieldnames="")
-            writer.writeheader()
+def save_file_path():
+    PathAndName = os.path.join(sys.path[0], "SD_Cards_save.dat")
     return PathAndName
 
 
-def Save():
-    with open(make_save_file(), "w") as myfile:
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        wr.writerow(listofsdcards)
+def Save(listofsdcards, copy_to_path):
+    thing_to_save_for_next_time = [
+        listofsdcards,
+        copy_to_path,
+    ]
+    outfile = open(save_file_path(), "wb")
+    pickle.dump(thing_to_save_for_next_time, outfile)
+    outfile.close()
 
 
 def open_save():
     try:
-        # gets the curent systom path and conbins it with the save file name
-        PathAndName = os.path.join(sys.path[0], "SD_Cards_save")
-        # makes and opans the save file
-        with open(PathAndName, "r") as plants_csv:
-            plants_readed = csv.reader(plants_csv, delimiter=",")
-            for plants_row in plants_readed:  # fix this it just looks bad
-                for savedpath in plants_row:
-                    listofsdcards.append(savedpath)
+        infile = open(save_file_path(), "rb")
+        new_dict = pickle.load(infile)
+        infile.close()
+        for item in new_dict[0]:
+            listofsdcards.append(item)
+        global copy_to_path
+        copy_to_path = new_dict[1]
+        updatelist()
+        changeTextOutPath()
     except:
         pass
 
@@ -92,17 +96,15 @@ def start_drive_offlode():
             # move files off sd card
 
             def offlode_card(sd):
-                # path to the directore to move files to
-                move_to = "/Volumes/WinInstall/one"
                 # walks the directory
                 for dirName, subdirList, fileList in os.walk(sd, topdown=False):
                     for fname in fileList:
                         # comdins to path with the file name
                         pathtofile = dirName + "/" + fname
-                        pathtopop = move_to + "/" + fname
+                        pathtopop = copy_to_path + "/" + fname
                         if os.path.exists(pathtopop) == False:
-                            print("moving: " + fname)
-                            copy2(pathtofile, move_to)
+                            print("Copying: " + fname)
+                            copy2(pathtofile, copy_to_path)
                         else:
                             print(fname + " duplcet")
 
@@ -113,7 +115,14 @@ def start_drive_offlode():
     thread = threading.Thread(target=Run)
     thread.start()
 
-    ###List box###
+
+def move_to_folder():
+    global copy_to_path
+    copy_to_path = filedialog.askdirectory()
+    changeTextOutPath()
+
+
+###List box###
 
 
 listbox_widget = tk.Listbox(root)
@@ -125,34 +134,56 @@ def updatelist():
         listbox_widget.insert(tk.END, entry)
 
 
-def setup():
-    pass
-
-
 SaveButton = tk.Button(
     root,
     text="Save",
     activeforeground="blue",
     height=3,
     width=15,
-    command=lambda: [Save()],
+    command=lambda: [Save(listofsdcards, copy_to_path), changeTextSaved()],
 )
 
-apendbutton = tk.Button(root, height=3, width=15, text="Add Path", command=Add_Sd_Card)
-
+apendbutton = tk.Button(root, height=3, width=15, text="Add drive", command=Add_Sd_Card)
 Start_scan = tk.Button(root, height=3, width=15, text="Start Scaning", command=switchon)
-stop_scan = tk.Button(root, height=3, width=15, text="Stop scaning", command=switchoff)
 killbutton = tk.Button(
     root, height=3, width=15, text="EXIT", command=lambda: [kill(), switchoff()]
 )
 
+outpath = tk.Button(
+    root,
+    text="Select output folder",
+    activeforeground="blue",
+    height=3,
+    width=15,
+    command=move_to_folder,
+)
+
+
+def changeTextSaved():
+    SaveButton["text"] = "Saved"
+
+
+def changeTextOutPath():
+    outpath["text"] = copy_to_path
+
+
+def changeTextStart():
+    Start_scan["text"] = "Stop"
+    Start_scan["command"] = switchoff
+
+
+def changeTextstop():
+    Start_scan["text"] = "Start"
+    Start_scan["command"] = switchon
+
+
 ###plasments###
+outpath.grid(row=1, column=0)
+Start_scan.grid(row=2, column=0)
 listbox_widget.grid(row=0, column=0)
-Start_scan.grid(row=1, column=0)
-stop_scan.grid(row=2, column=0)
-apendbutton.grid(row=3, column=0)
-SaveButton.grid(row=4, column=0)
-killbutton.grid(row=5, column=0)
+apendbutton.grid(row=4, column=0)
+SaveButton.grid(row=5, column=0)
+killbutton.grid(row=6, column=0)
 ######
 
 open_save()
